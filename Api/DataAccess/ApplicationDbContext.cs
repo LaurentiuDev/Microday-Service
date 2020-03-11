@@ -1,4 +1,5 @@
 ﻿using Api.Data.Entities.Authentication;
+using Api.Data.Entities.Tasks;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -12,8 +13,10 @@ namespace Api.DataAccess
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
           : base(options)
         {
-            Debug.WriteLine("Hello World");
         }
+
+        public DbSet<Task> Task { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
