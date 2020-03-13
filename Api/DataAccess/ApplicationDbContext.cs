@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 
 namespace Api.DataAccess
 {
@@ -19,7 +20,8 @@ namespace Api.DataAccess
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
-            base.OnModelCreating(builder);
+            builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+            
             builder.Entity<ApplicationUser>(b =>
             {
                 // Primary key
@@ -43,6 +45,8 @@ namespace Api.DataAccess
                 b.Property(u => u.FirstName).HasMaxLength(256);
                 b.Property(u => u.LastName).HasMaxLength(256);
             });
+
+            base.OnModelCreating(builder);
         }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {

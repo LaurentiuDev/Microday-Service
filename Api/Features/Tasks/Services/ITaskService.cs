@@ -7,5 +7,6 @@ namespace Api.Features.Tasks.Services
 {
     public interface ITaskService
     {
+
     }
 }

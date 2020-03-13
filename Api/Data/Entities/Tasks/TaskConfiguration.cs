@@ -1,10 +1,6 @@
 ﻿using Api.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Api.Data.Entities.Tasks
 {
@@ -13,13 +9,19 @@ namespace Api.Data.Entities.Tasks
         public void Configure(EntityTypeBuilder<Task> builder)
         {
             builder.Property(x => x.Name)
-                .HasMaxLength(DataAnnotationConstants.MAX_LENGTH_32)
+                .HasMaxLength(DataAnnotationConstants.MAX_LENGTH_64)
                 .IsRequired(true);
 
             builder.Property(x => x.Domain)
-                .HasMaxLength(DataAnnotationConstants.MAX_LENGTH_32)
+                .HasMaxLength(DataAnnotationConstants.MAX_LENGTH_64)
                 .IsRequired(true);
 
+            builder.Property(x => x.Description)
+                .HasMaxLength(DataAnnotationConstants.MAX_LENGTH_512)
+                .IsRequired(true);
+
+            builder.Property(x => x.Duration)
+                .IsRequired(true);
         }
     }
 }

@@ -8,7 +8,11 @@ namespace Api.Data.Entities.Tasks
 {
     public interface ITask
     {
+        Guid Id { get; set; }
+
         string Name { get; set; }
+
+        string Description { get; set; }
 
         string Domain { get; set; }
 
