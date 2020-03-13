@@ -2,6 +2,8 @@ using System;
 using System.Text;
 using Api.Data.Entities.Authentication;
 using Api.DataAccess;
+using Api.Features.Tasks.Repositories;
+using Api.Features.Tasks.Services;
 using Api.Helpers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -26,11 +28,18 @@ namespace Api
 
         public IConfiguration Configuration { get; }
 
+        private void ConfigureServicesDependency(IServiceCollection services)
+        {
+            services.AddTransient<IEmailSender, EmailSender>();
+            services.AddTransient<ITaskRepository, TaskRepository>();
+            services.AddTransient<ITaskService, TaskService>();
+        }
+
         public void ConfigureServices(IServiceCollection services)
         {
-
             ConfigureServicesDependency(services);
-            services.AddAuthorization();
+
+            ConfigureAuthentication(services);
 
             //get local database ConnectionString from AppSettings
             services.AddMvc(setupAction =>
@@ -39,21 +48,28 @@ namespace Api
                 setupAction.EnableEndpointRouting = false;
             });
 
-            services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlServer(
-            Configuration.GetConnectionString("Develop")));
+            services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("Develop")));
+
+            services.AddCors(options => options.AddPolicy("AllowAllOrigins", builder => builder.AllowAnyOrigin()
+                .AllowAnyMethod()
+                .AllowAnyHeader()));
+        }
+
+        private void ConfigureAuthentication(IServiceCollection services)
+        {
+            services.AddAuthorization();
+
             services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
                 .AddSignInManager()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
-
-            services.AddTransient<IEmailSender, EmailSender>();
 
             services.Configure<AuthMessageSenderOptions>(Configuration);
             services.Configure<DataProtectionTokenProviderOptions>(o =>
                              o.TokenLifespan = TimeSpan.FromHours(3));
 
             var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Tokens:Key"]));
+
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -110,10 +126,6 @@ namespace Api
                 options.SlidingExpiration = true;
             });
 
-            services.AddCors(options => options.AddPolicy("AllowAllOrigins", builder => builder.AllowAnyOrigin()
-                .AllowAnyMethod()
-                .AllowAnyHeader()));
-
             //services.AddAuthentication()
             //    .AddFacebook(facebookOptions =>
             //{
@@ -128,12 +140,6 @@ namespace Api
             //        options.ClientId = googleAuthNSection["ClientId"];
             //        options.ClientSecret = googleAuthNSection["ClientSecret"];
             //    });
-
-        }
-
-        private void ConfigureServicesDependency(IServiceCollection services)
-        {
-
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -163,11 +169,11 @@ namespace Api
             app.UseAuthentication();
             app.UseAuthorization();
 
-            app.UseMvc(routes =>
+            app.UseEndpoints(endpoints =>
             {
-                routes.MapRoute("default", "{controller=Home}/{action=Index}/{id?}");
+                endpoints.MapControllers();
+                endpoints.MapDefaultControllerRoute();
             });
-
         }
     }
 }
