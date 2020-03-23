@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Api.Features.Authentication.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -20,24 +21,20 @@ namespace Api.Data.Entities.Authentication
     [Route("api/[controller]")]
     public class AuthController : Controller
     {
-        readonly SignInManager<ApplicationUser> _signInManager;
-        readonly UserManager<ApplicationUser> _userManager;
-        readonly IConfiguration configuration;
-        readonly ILogger<AuthController> logger;
-        readonly IEmailSender _emailSender;
+        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IConfiguration _configuration;
+        private readonly ILogger<AuthController> _logger;
+        private readonly IEmailSender _emailSender;
 
         public AuthController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IConfiguration configuration, ILogger<AuthController> logger, IEmailSender emailSender)
         {
-            Debug.WriteLine("Hello World");
             this._userManager = userManager;
             this._signInManager = signInManager;
-            this.configuration = configuration;
-            this.logger = logger;
+            this._configuration = configuration;
+            this._logger = logger;
             this._emailSender = emailSender;
-            Debug.WriteLine("Hello Worlds");
         }
-
-
 
         [HttpPost]
         [Route("token")]
@@ -73,9 +70,6 @@ namespace Api.Data.Entities.Authentication
 
         }
 
-
-
-
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody]UserRegistration model)
         {
@@ -94,17 +88,18 @@ namespace Api.Data.Entities.Authentication
                 {
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                     code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-                    var callbackUrl = Url.Page(
-                        "/Account/ConfirmEmail",
-                        pageHandler: null,
-                        values: new { area = "Identity", userId = user.Id, code = code },
-                        protocol: Request.Scheme);
+
+                    var callbackUrl = Url.Action(
+                        controller: "Auth",
+                        action: "login",
+                        values: null,
+                        protocol: Request.Scheme,
+                        host: "localhost:8100");
 
                     await _emailSender.SendEmailAsync(user.Email, "Confirm your email",
                         $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
 
-                    await _signInManager.SignInAsync(user, false);
-                    return Ok(GetToken(user));
+                    return Ok();
                 }
                 else
                 {
@@ -120,22 +115,7 @@ namespace Api.Data.Entities.Authentication
             Debug.WriteLine(messages);
             return StatusCode(406);
         }
-        [HttpGet("testing")]
-        public async Task<IActionResult> Testing()
-        {
-            var data = new UserRegistration
-            {
-                FirstName = "Firstname",
-                LastName = "Lastname",
-                Email = "dodose@dere.de",
-                Password = "Password1!",
-                ConfirmPassword = "Passowrd1!"
-            };
-            var result = await Register(data);
-            Debug.WriteLine(result.ToString());
 
-            return StatusCode(200);
-        }
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
@@ -143,29 +123,30 @@ namespace Api.Data.Entities.Authentication
             return StatusCode(205);
         }
 
-        // [HttpGet("login")]
-        // public IActionResult Login(string ReturnUrl = "")
-        // {
-        //     var model = new UserLogin { ReturnUrl = ReturnUrl };
-        //     return StatusCode(200); // "no content, refresh; refresh client view
-        // }
-
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] UserLogin model)
         {
             if (ModelState.IsValid)
             {
+                var user = await _userManager.FindByEmailAsync(model.Email);
                 var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, true, false);
                 if (result.Succeeded)
                 {
-                    return Ok();
+                    var authResponse = new AuthResponse
+                    {
+                        Token = GetToken(user)
+                    };
+
+                    return Ok(authResponse);
                 }
             }
+
             ModelState.AddModelError("", "Invalid login attempt");
             return StatusCode(403); // implicit failure, failed login, includes bad credentials/permissions
         }
+
         [HttpPost("forgot-password")]
-        public async Task<IActionResult> ForgotPassword(UserForgotPassword model)
+        public async Task<IActionResult> ForgotPassword([FromBody] UserForgotPassword model)
         {
             var user = await _userManager.FindByEmailAsync(model.Email);
             if (ModelState.IsValid)
@@ -175,18 +156,19 @@ namespace Api.Data.Entities.Authentication
                     return StatusCode(404);
                 }
 
-                var code = await _userManager.GeneratePasswordResetTokenAsync(user);
-                code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-                var callbackUrl = Url.Page(
-                    "/Account/ResetPassword",
-                    pageHandler: null,
-                    values: new { area = "Identity", code },
-                    protocol: Request.Scheme);
+                var code = await _userManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 1);
+                var codeGenerated = code.First();
+                // code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+                // var callbackUrl = Url.Page(
+                //     "/change-password",
+                //     pageHandler: null,
+                //     values: new { area = "Identity", code },
+                //     protocol: Request.Scheme);
 
                 await _emailSender.SendEmailAsync(
                     model.Email,
                     "Reset Password",
-                    $"Please reset your password by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                    $"Your code for reset password: {codeGenerated}");
 
                 return StatusCode(404);
             }
@@ -206,15 +188,15 @@ namespace Api.Data.Entities.Authentication
                         new Claim(JwtRegisteredClaimNames.Iat, utcNow.ToString())
             };
 
-            var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(this.configuration.GetValue<String>("Tokens:Key")));
+            var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(this._configuration.GetValue<String>("Tokens:Key")));
             var signingCredentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
             var jwt = new JwtSecurityToken(
                 signingCredentials: signingCredentials,
                 claims: claims,
                 notBefore: utcNow,
-                expires: utcNow.AddSeconds(this.configuration.GetValue<int>("Tokens:Lifetime")),
-                audience: this.configuration.GetValue<String>("Tokens:Audience"),
-                issuer: this.configuration.GetValue<String>("Tokens:Issuer")
+                expires: utcNow.AddSeconds(this._configuration.GetValue<int>("Tokens:Lifetime")),
+                audience: this._configuration.GetValue<String>("Tokens:Audience"),
+                issuer: this._configuration.GetValue<String>("Tokens:Issuer")
                 );
 
             return new JwtSecurityTokenHandler().WriteToken(jwt);
