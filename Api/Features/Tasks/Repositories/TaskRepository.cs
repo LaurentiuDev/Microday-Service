@@ -1,29 +1,20 @@
 ﻿using Api.DataAccess;
+using Api.Features.BaseRepository;
+using Api.Features.Tasks.Entities;
 using Api.Features.Tasks.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace Api.Features.Tasks.Repositories
 {
-    public class TaskRepository : ITaskRepository
+    public class TaskRepository : BaseRepository<Task>, ITaskRepository
     {
-        private readonly ApplicationDbContext _applicationDbContext;
+        private readonly ApplicationDbContext _dbContext;
 
-        public TaskRepository(ApplicationDbContext applicationDbContext)
+        public TaskRepository(ApplicationDbContext dbContext) : base(dbContext)
         {
-            this._applicationDbContext = applicationDbContext;
-        }
-
-        public void Add(TaskModel taskModel)
-        {
-            this._applicationDbContext.Add(taskModel);
-        }
-
-        public bool Save()
-        {
-            return (this._applicationDbContext.SaveChanges() >= 0);
+            this._dbContext = dbContext;
         }
     }
 }

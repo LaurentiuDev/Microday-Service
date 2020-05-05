@@ -1,5 +1,5 @@
-﻿using Api.Data.Entities.Authentication;
-using Api.Data.Entities.Tasks;
+﻿using Api.Features.Authentication.Entities;
+using Api.Features.Tasks.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;

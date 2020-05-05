@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Api.Data.Entities.Tasks
+namespace Api.Features.Tasks.Entities
 {
     public interface ITask
     {
@@ -17,8 +17,6 @@ namespace Api.Data.Entities.Tasks
         string Domain { get; set; }
 
         Priority Priority { get; set; }
-
-        int Duration { get; set; }
 
         DateTime StartDate { get; set; }
 

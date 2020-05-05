@@ -1,4 +1,5 @@
-﻿using Api.Features.Authentication.Models;
+﻿using Api.Features.Authentication.Entities;
+using Api.Features.Authentication.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -87,19 +88,26 @@ namespace Api.Data.Entities.Authentication
                 if (result.Succeeded)
                 {
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                    code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+                    //code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
 
-                    var callbackUrl = Url.Action(
-                        controller: "Auth",
-                        action: "login",
-                        values: null,
-                        protocol: Request.Scheme,
-                        host: "localhost:8100");
+                    //var callbackUrl = Url.Action(
+                    //    controller: "Auth",
+                    //    action: "login",
+                    //    values: null,
+                    //    protocol: Request.Scheme,
+                    //    host: "localhost:8100");
 
-                    await _emailSender.SendEmailAsync(user.Email, "Confirm your email",
-                        $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                    //await _emailSender.SendEmailAsync(user.Email, "Confirm your email",
+                    //    $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
 
-                    return Ok();
+                    await _userManager.ConfirmEmailAsync(user, code).ConfigureAwait(true);
+
+                    var authResponse = new AuthResponse
+                    {
+                        Token = GetToken(user)
+                    };
+
+                    return Ok(authResponse);
                 }
                 else
                 {

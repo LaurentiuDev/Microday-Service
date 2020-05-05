@@ -1,6 +1,6 @@
 ﻿using Api.Constants;
-using Api.Data.Entities.Tasks;
 using Api.Enums;
+using Api.Features.Tasks.Entities;
 using System;
 using System.ComponentModel.DataAnnotations;
 
@@ -23,9 +23,6 @@ namespace Api.Features.Tasks.Models
         public string Domain { get; set; }
 
         public Priority Priority { get; set; }
-
-        [Required]
-        public int Duration { get; set; }
 
         public DateTime StartDate { get; set; }
 

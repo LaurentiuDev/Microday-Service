@@ -19,7 +19,7 @@ namespace Api.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128)
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-            modelBuilder.Entity("Api.Data.Entities.Authentication.ApplicationUser", b =>
+            modelBuilder.Entity("Api.Features.Authentication.Entities.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
@@ -94,7 +94,7 @@ namespace Api.Migrations
                     b.ToTable("AspNetUsers");
                 });
 
-            modelBuilder.Entity("Api.Data.Entities.Tasks.Task", b =>
+            modelBuilder.Entity("Api.Features.Tasks.Entities.Task", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -112,9 +112,6 @@ namespace Api.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(64)")
                         .HasMaxLength(64);
-
-                    b.Property<int>("Duration")
-                        .HasColumnType("int");
 
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
@@ -284,7 +281,7 @@ namespace Api.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("Api.Data.Entities.Authentication.ApplicationUser", null)
+                    b.HasOne("Api.Features.Authentication.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -293,7 +290,7 @@ namespace Api.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("Api.Data.Entities.Authentication.ApplicationUser", null)
+                    b.HasOne("Api.Features.Authentication.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -308,7 +305,7 @@ namespace Api.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Api.Data.Entities.Authentication.ApplicationUser", null)
+                    b.HasOne("Api.Features.Authentication.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -317,7 +314,7 @@ namespace Api.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("Api.Data.Entities.Authentication.ApplicationUser", null)
+                    b.HasOne("Api.Features.Authentication.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)

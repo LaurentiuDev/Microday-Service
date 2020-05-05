@@ -1,14 +1,13 @@
-﻿using Api.Features.Tasks.Models;
+﻿using Api.Features.BaseRepository.Interfaces;
+using Api.Features.Tasks.Entities;
+using Api.Features.Tasks.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace Api.Features.Tasks.Repositories
 {
-    public interface ITaskRepository
+    public interface ITaskRepository: IBaseRepository<Task>
     {
-        void Add(TaskModel entity);
-        bool Save();
     }
 }

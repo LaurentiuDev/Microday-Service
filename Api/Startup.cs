@@ -1,13 +1,23 @@
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Text;
 using Api.Data.Entities.Authentication;
 using Api.DataAccess;
+using Api.Features.Authentication.Entities;
+using Api.Features.BaseRepository;
+using Api.Features.BaseRepository.Interfaces;
+using Api.Features.Tasks.Entities;
+using Api.Features.Tasks.Models;
 using Api.Features.Tasks.Repositories;
 using Api.Features.Tasks.Services;
 using Api.Helpers;
+using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +26,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Sieve.Models;
+using Sieve.Services;
 
 namespace Api
 {
@@ -30,9 +42,22 @@ namespace Api
 
         private void ConfigureServicesDependency(IServiceCollection services)
         {
-            services.AddTransient<IEmailSender, EmailSender>();
-            services.AddTransient<ITaskRepository, TaskRepository>();
-            services.AddTransient<ITaskService, TaskService>();
+            services.AddScoped<IEmailSender, EmailSender>();
+            services.AddScoped<ITaskRepository, TaskRepository>();
+            services.AddScoped<ITaskService, TaskService>();
+            services.AddScoped<IBaseRepository<Task>, BaseRepository<Task>>();
+            services.AddScoped<ISieveProcessor, SieveProcessor>();
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+            services.Configure<SieveOptions>(Configuration.GetSection("Sieve"));
+
+            var mappingConfig = new MapperConfiguration(mc =>
+            {
+                mc.AddProfile(new TaskProfile());
+            });
+
+            IMapper mapper = mappingConfig.CreateMapper();
+            services.AddSingleton(mapper);
         }
 
         public void ConfigureServices(IServiceCollection services)
@@ -154,6 +179,20 @@ namespace Api
                 app.UseExceptionHandler("/Error");
                 app.UseHsts();
             }
+
+            // TIME MEASUREMENT
+            //var times = new List<long>();
+            //app.Use(async (context, next) =>
+            //{
+            //    var sw = new Stopwatch();
+            //    sw.Start();
+            //    await next.Invoke();
+            //    sw.Stop();
+            //    times.Add(sw.ElapsedMilliseconds);
+            //    var text = $"AVG: {(int)times.Average()}ms; AT {sw.ElapsedMilliseconds}; COUNT: {times.Count()}";
+            //    Console.WriteLine(text);
+            //    await context.Response.WriteAsync($"<!-- {text} -->");
+            //});
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();

@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Api.Data.Entities.Tasks
+namespace Api.Features.Tasks.Entities
 {
     public class TaskConfiguration : IEntityTypeConfiguration<Task>
     {
@@ -18,9 +18,6 @@ namespace Api.Data.Entities.Tasks
 
             builder.Property(x => x.Description)
                 .HasMaxLength(DataAnnotationConstants.MAX_LENGTH_512)
-                .IsRequired(true);
-
-            builder.Property(x => x.Duration)
                 .IsRequired(true);
         }
     }

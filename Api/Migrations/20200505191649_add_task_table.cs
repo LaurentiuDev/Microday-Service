@@ -16,7 +16,6 @@ namespace Api.Migrations
                     Description = table.Column<string>(maxLength: 512, nullable: false),
                     Domain = table.Column<string>(maxLength: 64, nullable: false),
                     Priority = table.Column<int>(nullable: false),
-                    Duration = table.Column<int>(nullable: false),
                     StartDate = table.Column<DateTime>(nullable: false),
                     EndDate = table.Column<DateTime>(nullable: false),
                     CreatedAt = table.Column<DateTime>(nullable: false),
