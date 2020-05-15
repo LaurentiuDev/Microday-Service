@@ -21,13 +21,16 @@ namespace Api.Features.Tasks.Entities
         public string Domain { get; set; }
 
         [Sieve(CanFilter = true, CanSort = true)]
-        public Priority Priority { get; set; }
+        public Priority? Priority { get; set; }
 
         [Sieve(CanFilter = true, CanSort = true)]
-        public DateTime StartDate { get; set; }
+        public DateTimeOffset StartDate { get; set; }
 
         [Sieve(CanFilter = true, CanSort = true)]
-        public DateTime EndDate { get; set; }
+        public DateTimeOffset EndDate { get; set; }
+
+        [Sieve(CanFilter = true, CanSort = true)]
+        public bool? Completed { get; set; }
 
         [Sieve(CanFilter = true, CanSort = true)]
         public DateTime CreatedAt { get; set; }

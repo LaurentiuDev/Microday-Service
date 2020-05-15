@@ -14,7 +14,6 @@ namespace Api.Features.Tasks.Models
         [MaxLength(DataAnnotationConstants.MAX_LENGTH_64)]
         public string Name { get; set; }
 
-        [Required]
         [MaxLength(DataAnnotationConstants.MAX_LENGTH_512)]
         public string Description { get; set; }
 
@@ -22,11 +21,13 @@ namespace Api.Features.Tasks.Models
         [MaxLength(DataAnnotationConstants.MAX_LENGTH_64)]
         public string Domain { get; set; }
 
-        public Priority Priority { get; set; }
+        public Priority? Priority { get; set; }
 
-        public DateTime StartDate { get; set; }
+        public DateTimeOffset StartDate { get; set; }
 
-        public DateTime EndDate { get; set; }
+        public DateTimeOffset EndDate { get; set; }
+
+        public bool? Completed { get; set; }
 
         public DateTime CreatedAt { get; set; }
 

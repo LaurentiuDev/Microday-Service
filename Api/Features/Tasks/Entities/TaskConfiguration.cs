@@ -17,8 +17,7 @@ namespace Api.Features.Tasks.Entities
                 .IsRequired(true);
 
             builder.Property(x => x.Description)
-                .HasMaxLength(DataAnnotationConstants.MAX_LENGTH_512)
-                .IsRequired(true);
+                .HasMaxLength(DataAnnotationConstants.MAX_LENGTH_512);
         }
     }
 }

@@ -121,7 +121,7 @@ namespace Api.Features.Tasks
 
                 await _unitOfWork.Commit();
 
-                return Ok();
+                return NoContent();
             }
             catch (Exception e)
             {

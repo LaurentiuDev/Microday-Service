@@ -13,6 +13,7 @@ using Api.Features.Tasks.Models;
 using Api.Features.Tasks.Repositories;
 using Api.Features.Tasks.Services;
 using Api.Helpers;
+using Api.Helpers.Converters;
 using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -71,6 +72,9 @@ namespace Api
             {
                 setupAction.ReturnHttpNotAcceptable = true;
                 setupAction.EnableEndpointRouting = false;
+            }).AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.Converters.Add(new DateTimeConverter());
             });
 
             services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("Develop")));

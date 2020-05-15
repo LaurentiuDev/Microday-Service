@@ -13,11 +13,12 @@ namespace Api.Migrations
                 {
                     Id = table.Column<Guid>(nullable: false),
                     Name = table.Column<string>(maxLength: 64, nullable: false),
-                    Description = table.Column<string>(maxLength: 512, nullable: false),
+                    Description = table.Column<string>(maxLength: 512, nullable: true),
                     Domain = table.Column<string>(maxLength: 64, nullable: false),
-                    Priority = table.Column<int>(nullable: false),
-                    StartDate = table.Column<DateTime>(nullable: false),
-                    EndDate = table.Column<DateTime>(nullable: false),
+                    Priority = table.Column<int>(nullable: true),
+                    StartDate = table.Column<DateTimeOffset>(nullable: false),
+                    EndDate = table.Column<DateTimeOffset>(nullable: false),
+                    Completed = table.Column<bool>(nullable: true),
                     CreatedAt = table.Column<DateTime>(nullable: false),
                     UpdatedAt = table.Column<DateTime>(nullable: false)
                 },

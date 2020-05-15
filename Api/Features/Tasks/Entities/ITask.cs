@@ -16,11 +16,13 @@ namespace Api.Features.Tasks.Entities
 
         string Domain { get; set; }
 
-        Priority Priority { get; set; }
+        Priority? Priority { get; set; }
 
-        DateTime StartDate { get; set; }
+        DateTimeOffset StartDate { get; set; }
 
-        DateTime EndDate { get; set; }
+        DateTimeOffset EndDate { get; set; }
+
+        bool? Completed { get; set; }
 
         DateTime CreatedAt { get; set; }
 
