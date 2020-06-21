@@ -1,8 +1,11 @@
 ﻿using Api.Features.Authentication.Entities;
+using Api.Features.SubTasks.Entities;
 using Api.Features.Tasks.Entities;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
@@ -17,6 +20,8 @@ namespace Api.DataAccess
         }
 
         public DbSet<Task> Task { get; set; }
+
+        public DbSet<SubTask> SubTask { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

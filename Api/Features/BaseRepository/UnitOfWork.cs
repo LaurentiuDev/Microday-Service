@@ -1,5 +1,6 @@
 ﻿using Api.DataAccess;
 using Api.Features.BaseRepository.Interfaces;
+using Api.Features.SubTasks.Repositories;
 using Api.Features.Tasks.Repositories;
 using System;
 using System.Collections.Generic;
@@ -13,6 +14,8 @@ namespace Api.Features.BaseRepository
         private readonly ApplicationDbContext _dbContext;
 
         public ITaskRepository Tasks { get; private set; }
+
+        public ISubTaskRepository SubTasks { get; private set; }
 
         public UnitOfWork(ApplicationDbContext dbContext)
         {

@@ -1,4 +1,6 @@
 ﻿using Api.Enums;
+using Api.Features.Authentication.Entities;
+using Api.Features.SubTasks.Entities;
 using Sieve.Attributes;
 using System;
 using System.Collections.Generic;
@@ -11,31 +13,28 @@ namespace Api.Features.Tasks.Entities
     {
         public Guid Id { get; set; }
 
-        [Sieve(CanFilter = true, CanSort = true)]
+        public string UserId { get; set; }
+
+        public ApplicationUser User { get; set; }
+
         public string Name { get; set; }
 
-        [Sieve(CanFilter = true, CanSort = true)]
         public string Description { get; set; }
 
-        [Sieve(CanFilter = true, CanSort = true)]
         public string Domain { get; set; }
 
-        [Sieve(CanFilter = true, CanSort = true)]
         public Priority? Priority { get; set; }
 
-        [Sieve(CanFilter = true, CanSort = true)]
         public DateTimeOffset StartDate { get; set; }
 
-        [Sieve(CanFilter = true, CanSort = true)]
         public DateTimeOffset EndDate { get; set; }
 
-        [Sieve(CanFilter = true, CanSort = true)]
         public bool? Completed { get; set; }
 
-        [Sieve(CanFilter = true, CanSort = true)]
+        public IList<SubTask> SubTasks { get; set; }
+
         public DateTime CreatedAt { get; set; }
 
-        [Sieve(CanFilter = true, CanSort = true)]
         public DateTime UpdatedAt { get; set; }
     }
 }

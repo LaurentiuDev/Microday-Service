@@ -18,6 +18,13 @@ namespace Api.Features.Tasks.Entities
 
             builder.Property(x => x.Description)
                 .HasMaxLength(DataAnnotationConstants.MAX_LENGTH_512);
+
+            builder.Property(x => x.UserId)
+                .IsRequired(true);
+
+            // FK - configuration
+            builder.HasMany(x => x.SubTasks).WithOne(x => x.Task).HasForeignKey(x => x.TaskId).IsRequired();
+            builder.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).IsRequired(true);
         }
     }
 }

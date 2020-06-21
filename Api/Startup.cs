@@ -8,6 +8,9 @@ using Api.DataAccess;
 using Api.Features.Authentication.Entities;
 using Api.Features.BaseRepository;
 using Api.Features.BaseRepository.Interfaces;
+using Api.Features.SubTasks.Entities;
+using Api.Features.SubTasks.Repositories;
+using Api.Features.SubTasks.Services;
 using Api.Features.Tasks.Entities;
 using Api.Features.Tasks.Models;
 using Api.Features.Tasks.Repositories;
@@ -44,9 +47,17 @@ namespace Api
         private void ConfigureServicesDependency(IServiceCollection services)
         {
             services.AddScoped<IEmailSender, EmailSender>();
+
+            // Register Tasks services
             services.AddScoped<ITaskRepository, TaskRepository>();
             services.AddScoped<ITaskService, TaskService>();
             services.AddScoped<IBaseRepository<Task>, BaseRepository<Task>>();
+
+            // Register SubTasks services
+            services.AddScoped<ISubTaskRepository, SubTaskRepository>();
+            services.AddScoped<ISubTaskService, SubTaskService>();
+            services.AddScoped<IBaseRepository<SubTask>, BaseRepository<SubTask>>();
+
             services.AddScoped<ISieveProcessor, SieveProcessor>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
