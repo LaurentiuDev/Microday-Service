@@ -2,6 +2,7 @@
 using Api.Features.BaseRepository.Interfaces;
 using Api.Features.SubTasks.Repositories;
 using Api.Features.Tasks.Repositories;
+using Api.Features.Users.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,10 +18,14 @@ namespace Api.Features.BaseRepository
 
         public ISubTaskRepository SubTasks { get; private set; }
 
+        public IUserRepository Users { get; private set; }
+
         public UnitOfWork(ApplicationDbContext dbContext)
         {
             _dbContext = dbContext;
             Tasks = new TaskRepository(_dbContext);
+            SubTasks = new SubTaskRepository(_dbContext);
+            Users = new UserRepository(_dbContext);
         }
 
         public async Task Commit()

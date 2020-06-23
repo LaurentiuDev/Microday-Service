@@ -9,12 +9,16 @@ using Api.Features.Authentication.Entities;
 using Api.Features.BaseRepository;
 using Api.Features.BaseRepository.Interfaces;
 using Api.Features.SubTasks.Entities;
+using Api.Features.SubTasks.Models;
 using Api.Features.SubTasks.Repositories;
 using Api.Features.SubTasks.Services;
 using Api.Features.Tasks.Entities;
 using Api.Features.Tasks.Models;
 using Api.Features.Tasks.Repositories;
 using Api.Features.Tasks.Services;
+using Api.Features.Users.Models;
+using Api.Features.Users.Repositories;
+using Api.Features.Users.Services;
 using Api.Helpers;
 using Api.Helpers.Converters;
 using AutoMapper;
@@ -58,6 +62,10 @@ namespace Api
             services.AddScoped<ISubTaskService, SubTaskService>();
             services.AddScoped<IBaseRepository<SubTask>, BaseRepository<SubTask>>();
 
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IBaseRepository<ApplicationUser>, BaseRepository<ApplicationUser>>();
+
             services.AddScoped<ISieveProcessor, SieveProcessor>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
@@ -66,6 +74,8 @@ namespace Api
             var mappingConfig = new MapperConfiguration(mc =>
             {
                 mc.AddProfile(new TaskProfile());
+                mc.AddProfile(new SubTaskProfile());
+                mc.AddProfile(new UserProfile());
             });
 
             IMapper mapper = mappingConfig.CreateMapper();

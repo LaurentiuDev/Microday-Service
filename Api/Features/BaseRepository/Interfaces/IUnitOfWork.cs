@@ -1,5 +1,6 @@
 ﻿using Api.Features.SubTasks.Repositories;
 using Api.Features.Tasks.Repositories;
+using Api.Features.Users.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,8 @@ namespace Api.Features.BaseRepository.Interfaces
         ITaskRepository Tasks { get; }
 
         ISubTaskRepository SubTasks { get; }
+
+        IUserRepository Users { get; }
 
         Task Commit();
     }
