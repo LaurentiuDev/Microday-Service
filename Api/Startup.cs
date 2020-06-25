@@ -22,6 +22,8 @@ using Api.Features.Users.Services;
 using Api.Helpers;
 using Api.Helpers.Converters;
 using AutoMapper;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -52,12 +54,12 @@ namespace Api
         {
             services.AddScoped<IEmailSender, EmailSender>();
 
-            // Register Tasks services
+            //// Register Tasks services
             services.AddScoped<ITaskRepository, TaskRepository>();
             services.AddScoped<ITaskService, TaskService>();
             services.AddScoped<IBaseRepository<Task>, BaseRepository<Task>>();
 
-            // Register SubTasks services
+            //// Register SubTasks services
             services.AddScoped<ISubTaskRepository, SubTaskRepository>();
             services.AddScoped<ISubTaskService, SubTaskService>();
             services.AddScoped<IBaseRepository<SubTask>, BaseRepository<SubTask>>();
@@ -66,10 +68,16 @@ namespace Api
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IBaseRepository<ApplicationUser>, BaseRepository<ApplicationUser>>();
 
+            services.AddScoped<ISieveProcessor, TaskSieveProcessor>();
+            services.AddScoped<ISieveProcessor, UserSieveProcessor>();
+            services.AddScoped<ISieveProcessor, SubTaskSieveProcessor>();
+
             services.AddScoped<ISieveProcessor, SieveProcessor>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
+            services.AddScoped<SieveProcessor>();
 
-            services.Configure<SieveOptions>(Configuration.GetSection("Sieve"));
+            // register options
+            services.AddOptions<SieveOptions>().Bind(Configuration.GetSection("Sieve"));
 
             var mappingConfig = new MapperConfiguration(mc =>
             {
@@ -177,11 +185,6 @@ namespace Api
             });
 
             //services.AddAuthentication()
-            //    .AddFacebook(facebookOptions =>
-            //{
-            //    facebookOptions.AppId = Configuration["Authentication:Facebook:AppId"];
-            //    facebookOptions.AppSecret = Configuration["Authentication:Facebook:AppSecret"];
-            //})
             //    .AddGoogle(options =>
             //    {
             //        IConfigurationSection googleAuthNSection =
@@ -190,6 +193,37 @@ namespace Api
             //        options.ClientId = googleAuthNSection["ClientId"];
             //        options.ClientSecret = googleAuthNSection["ClientSecret"];
             //    });
+            //    .AddFacebook(facebookOptions =>
+            //{
+            //    facebookOptions.AppId = Configuration["Authentication:Facebook:AppId"];
+            //    facebookOptions.AppSecret = Configuration["Authentication:Facebook:AppSecret"];
+            //})
+
+
+            services.AddAuthentication(options =>
+                {
+                    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+                })
+                .AddCookie(options =>
+                {
+                    options.Cookie.IsEssential = true;
+                    //options.Cookie.SameSite = SameSiteMode.None;
+                })
+            //    .AddFacebook(options =>
+            //    {
+            //        options.AppId = Configuration["FacebookOptions:AppId"];
+            //        options.AppSecret = Configuration["FacebookOptions:AppSecret"];
+            //    })
+                .AddGoogle(options =>
+                {
+                    options.CallbackPath = "/signin-google";
+                    options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                    options.ClientId = Configuration["GoogleOptions:ClientId"];
+                    options.ClientSecret = Configuration["GoogleOptions:ClientSecret"];
+                });
+
+            services.AddControllers();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

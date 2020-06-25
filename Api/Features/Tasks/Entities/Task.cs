@@ -13,8 +13,10 @@ namespace Api.Features.Tasks.Entities
     {
         public Guid Id { get; set; }
 
+        [Sieve(CanFilter = true, CanSort = true)]
         public string UserId { get; set; }
 
+        [Sieve(CanFilter = true, CanSort = true)]
         public ApplicationUser User { get; set; }
 
         public string Name { get; set; }
