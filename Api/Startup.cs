@@ -22,9 +22,11 @@ using Api.Features.Users.Services;
 using Api.Helpers;
 using Api.Helpers.Converters;
 using AutoMapper;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -95,6 +97,8 @@ namespace Api
             ConfigureServicesDependency(services);
 
             ConfigureAuthentication(services);
+
+            //services.RegisterServices();
 
             //get local database ConnectionString from AppSettings
             services.AddMvc(setupAction =>
@@ -204,6 +208,7 @@ namespace Api
                 {
                     options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
                     options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+                    options.DefaultSignOutScheme = IdentityConstants.ApplicationScheme;
                 })
                 .AddCookie(options =>
                 {
@@ -217,10 +222,24 @@ namespace Api
             //    })
                 .AddGoogle(options =>
                 {
-                    options.CallbackPath = "/signin-google";
-                    options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                    options.ClientId = Configuration["GoogleOptions:ClientId"];
-                    options.ClientSecret = Configuration["GoogleOptions:ClientSecret"];
+                    var googleAuth = Configuration.GetSection("Authentication:Google");
+
+                    options.CallbackPath = new PathString("/signin-google");
+                    options.ClientId = googleAuth["ClientId"];
+                    options.ClientSecret = googleAuth["ClientSecret"];
+                    options.SignInScheme = IdentityConstants.ExternalScheme;
+
+                    options.Events = new OAuthEvents
+                    {
+                        OnRemoteFailure = (RemoteFailureContext context) =>
+                        {
+                            //context.Failure.Message contains an error message that hopefully will help identify the problem
+
+                            context.Response.Redirect($"/error?errorMessage={context.Failure.Message}");
+                            context.HandleResponse();
+                            return null;
+                        }
+                    };
                 });
 
             services.AddControllers();
