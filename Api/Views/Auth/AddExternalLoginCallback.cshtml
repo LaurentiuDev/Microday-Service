@@ -10,7 +10,8 @@
         var message = {
             status: true,
             medium: "@Model.Medium",
-            platform: "@Model.Platform"
+            platform: "@Model.Platform",
+            token: "@Model.Token"
         };
         window.opener.postMessage(JSON.stringify(message), "*");
     </text>

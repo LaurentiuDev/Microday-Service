@@ -49,231 +49,80 @@ namespace Api.Data.Entities.Authentication
             _userService = userService;
             this._emailSender = emailSender;
         }
-
-        //// GET: web/Account/providers
-        //[AllowAnonymous]
-        //[HttpGet("providers", Name = "web-account-external-providers")]
-        //public async Task<ActionResult<IEnumerable<string>>> Providers()
-        //{
-        //    var providers = await _signInManager.GetExternalAuthenticationSchemesAsync();
-        //    var result = providers.Select(s => s.DisplayName);
-
-        //    return Ok(result);
-        //}
-
-        // GET: web/Account/current-user
-        [Authorize]
-        [HttpGet("current-user", Name = "web-account-currentuser")]
-        public async Task<ActionResult<ApplicationUser>> GetCurrentUser()
-        {
-            var user = await _userManager.GetUserAsync(User);
-            return Ok(user);
-        }
-
+       
         // GET: web/Account/connect/{provider}
         [AllowAnonymous]
         [HttpGet("connect/{medium}/{provider}", Name = "web-account-external-connect-challenge")]
-        public async Task<ActionResult> ExternalLogin([FromRoute]string medium, [FromRoute]string provider)
+        public ActionResult ExternalLogin([FromRoute]string medium, [FromRoute]string provider)
         {
-            //var redirectUrl = Url.Action(nameof(ExternalLoginCallback), "Account", new { medium, provider });
             var redirectUrl = Url.RouteUrl("web-account-external-connect-callback", new { medium, provider });
             var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
-            return Challenge(properties, provider);
+            return new ChallengeResult(provider, properties);
         }
 
         // GET: web/Account/connect/{provider}/callback
         [HttpGet("connect/{medium}/{provider}/callback", Name = "web-account-external-connect-callback")]
-        public async Task<ActionResult> ExternalLoginCallback([FromRoute]string medium, [FromRoute]string provider)
+        public async Task<IActionResult> ExternalLoginCallback([FromRoute]string medium, [FromRoute]string provider)
         {
-            try
+            ExternalLoginInfo info = await _signInManager.GetExternalLoginInfoAsync();
+            if (info == null)
+                return RedirectToAction(nameof(Login));
+
+            var result = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, false);
+            string[] userInfo = { info.Principal.FindFirst(ClaimTypes.Name).Value, info.Principal.FindFirst(ClaimTypes.Email).Value };
+
+            string username = info.Principal.FindFirstValue(ClaimTypes.Name);
+            string email = info.Principal.FindFirstValue(ClaimTypes.Email);
+
+            var user = new ApplicationUser
             {
-                var info = await _signInManager.GetExternalLoginInfoAsync();
-                if (info == null)
-                    throw new UnauthorizedAccessException();
+                FirstName = username.Split(" ").First(),
+                LastName = username.Split(" ").LastOrDefault(),
+                UserName = Regex.Replace(username, @"\s+", "_"),
+                Email = email
+            };
 
-                // Check if the login is known in our database
-                var user = await _userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
-                if (user == null)
-                {
-                    string username = info.Principal.FindFirstValue(ClaimTypes.Name);
-                    string email = info.Principal.FindFirstValue(ClaimTypes.Email);
-
-                    var new_user = new ApplicationUser
-                    {
-                        FirstName = username.Split(" ").First(),
-                        LastName = username.Split(" ").LastOrDefault(),
-                        UserName = Regex.Replace(username, @"\s+", "_"),
-                        Email = email
-                    };
-                    var id_result = await _userManager.CreateAsync(new_user);
-                    if (id_result.Succeeded)
-                    {
-                        user = new_user;
-                    }
-                    else
-                    {
-                        // User creation failed, probably because the email address is already present in the database
-                        if (id_result.Errors.Any(e => e.Code == "DuplicateEmail"))
-                        {
-                            var existing = await _userManager.FindByEmailAsync(email);
-                            var existing_logins = await _userManager.GetLoginsAsync(existing);
-
-                            if (existing_logins.Any())
-                            {
-                                throw new OtherAccountException(existing_logins);
-                            }
-                            else
-                            {
-                                throw new Exception("Could not create account from social profile");
-                            }
-                        }
-                        else
-                        {
-                            throw new Exception("Could not create account from social profile");
-                        }
-                    }
-
-                    await _userManager.AddLoginAsync(user, new UserLoginInfo(info.LoginProvider, info.ProviderKey, info.ProviderDisplayName));
-                }
-
-                await _signInManager.SignInAsync(user, true);
-
-                var login_result = new LoginResult
+            if (result.Succeeded)
+            {
+                var model = new LoginResultVM
                 {
                     Status = true,
+                    Medium = medium,
                     Platform = info.LoginProvider,
-                    User = user
+                    Token = GetToken(user)
                 };
 
-                if (login_result.Status)
-                {
-                    var model = new LoginResultVM
-                    {
-                        Status = true,
-                        Medium = medium,
-                        Platform = login_result.Platform,
-                        User = user,
-                        Token = GetToken(user)
-                    };
-                    return View(model);
-                }
-                else
-                {
-                    var model = new LoginResultVM
-                    {
-                        Status = false,
-                        Medium = medium,
-                        Platform = login_result.Platform,
-
-                        Error = login_result.Error,
-                        ErrorDescription = login_result.ErrorDescription
-                    };
-                    return View(model);
-                }
-            }
-            catch (OtherAccountException otherAccountEx)
-            {
-                var model = new LoginResultVM
-                {
-                    Status = false,
-                    Medium = medium,
-                    Platform = provider,
-
-                    Error = "Could not login",
-                    ErrorDescription = otherAccountEx.Message
-                };
                 return View(model);
             }
-            catch (Exception ex)
+            else
             {
-                var model = new LoginResultVM
-                {
-                    Status = false,
-                    Medium = medium,
-                    Platform = provider,
+                IdentityResult identResult = await _userManager.CreateAsync(user);
 
-                    Error = "Could not login",
-                    ErrorDescription = "There was an error with your social login"
-                };
-                return View(model);
+                if (identResult.Succeeded)
+                {
+                    identResult = await _userManager.AddLoginAsync(user, info);
+                    if (identResult.Succeeded)
+                    {
+                        var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+
+                        await _userManager.ConfirmEmailAsync(user, code).ConfigureAwait(true);
+
+                        await _signInManager.SignInAsync(user, false);
+
+                        var model = new LoginResultVM
+                        {
+                            Status = true,
+                            Medium = medium,
+                            Platform = info.LoginProvider,
+                            Token = GetToken(user)
+                        };
+
+                        return View(model);
+                    }
+                }
+                return View();
             }
         }
-
-        //[HttpPost]
-        //[Route("external-login")]
-        //public IActionResult ExternalLogin(string provider, string returnUrl = null)
-        //{
-        //    var redirectUrl = Url.Action(nameof(ExternalLoginCallback), "Auth", new { returnUrl });
-        //    var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
-        //    return Challenge(properties, provider);
-        //}
-
-        //[HttpPost]
-        //[Route("external-login")]
-        //public IActionResult ExternalLogin(string provider, string returnUrl)
-        //{
-        //    var redirectUrl = Url.Action("HandleExternalLogin", "Auth", new { ReturnUrl = returnUrl });
-        //    var authenticationProperties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
-
-
-        //    //return new ChallengeResult(provider, authenticationProperties);
-        //}
-
-        //public async Task<IActionResult> HandleExternalLogin(string returnUrl = null, string remoteError = null)
-        //{
-        //    var info = await _signInManager.GetExternalLoginInfoAsync();
-
-        //    var result = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false);
-
-        //    if (!result.Succeeded) //user does not exist yet
-        //    {
-        //        var email = info.Principal.FindFirstValue(ClaimTypes.Email);
-        //        var newUser = new ApplicationUser
-        //        {
-        //            UserName = email,
-        //            Email = email,
-        //            EmailConfirmed = true
-        //        };
-        //        var createResult = await _userManager.CreateAsync(newUser);
-        //        if (!createResult.Succeeded)
-        //            throw new Exception(createResult.Errors.Select(e => e.Description).Aggregate((errors, error) => $"{errors}, {error}"));
-
-        //        await _userManager.AddLoginAsync(newUser, info);
-        //        var newUserClaims = info.Principal.Claims.Append(new Claim("userId", newUser.Id));
-        //        await _userManager.AddClaimsAsync(newUser, newUserClaims);
-        //        await _signInManager.SignInAsync(newUser, isPersistent: false);
-        //        await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
-        //    }
-
-        //    return Ok();
-        //}
-
-        //[HttpGet]
-        //public async Task<IActionResult> ExternalLoginCallback(string returnUrl = null)
-        //{
-        //    var info = await _signInManager.GetExternalLoginInfoAsync();
-        //    if (info == null)
-        //    {
-        //        return RedirectToAction(nameof(Login));
-        //    }
-
-        //    var signInResult = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
-        //    if (signInResult.Succeeded)
-        //    {
-        //        return Redirect(returnUrl);
-        //    }
-        //    if (signInResult.IsLockedOut)
-        //    {
-        //        return RedirectToAction(nameof(ForgotPassword));
-        //    }
-        //    else
-        //    {
-        //        ViewData["ReturnUrl"] = returnUrl;
-        //        ViewData["Provider"] = info.LoginProvider;
-        //        var email = info.Principal.FindFirstValue(ClaimTypes.Email);
-        //        return View("ExternalLogin", new ExternalLoginModel { Email = email });
-        //    }
-        //}
 
         [HttpPost]
         [Route("token")]

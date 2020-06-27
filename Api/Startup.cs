@@ -27,6 +27,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.OAuth;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -35,6 +36,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -136,10 +138,14 @@ namespace Api
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+
+                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
             }).AddJwtBearer(config =>
             {
                 config.RequireHttpsMetadata = false;
                 config.SaveToken = true;
+                config.ClaimsIssuer = "http://localhost:63778/";
                 config.TokenValidationParameters = new TokenValidationParameters()
                 {
                     IssuerSigningKey = signingKey,
@@ -150,7 +156,21 @@ namespace Api
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true
                 };
+            }).AddGoogle(options =>
+            {
+                var googleAuth = Configuration.GetSection("Authentication:Google");
+
+                options.ClientId = googleAuth["ClientId"];
+                options.ClientSecret = googleAuth["ClientSecret"];
+                options.SignInScheme = IdentityConstants.ExternalScheme;
+            }).AddCookie(options => {
+                options.Cookie.IsEssential = true;
             });
+            //    .AddFacebook(options =>
+            //    {
+            //        options.AppId = Configuration["FacebookOptions:AppId"];
+            //        options.AppSecret = Configuration["FacebookOptions:AppSecret"];
+            //    });
 
             services.AddSwaggerGen(c =>
             {
@@ -187,60 +207,6 @@ namespace Api
                 options.LoginPath = "/api/auth/login";
                 options.SlidingExpiration = true;
             });
-
-            //services.AddAuthentication()
-            //    .AddGoogle(options =>
-            //    {
-            //        IConfigurationSection googleAuthNSection =
-            //            Configuration.GetSection("Authentication:Google");
-
-            //        options.ClientId = googleAuthNSection["ClientId"];
-            //        options.ClientSecret = googleAuthNSection["ClientSecret"];
-            //    });
-            //    .AddFacebook(facebookOptions =>
-            //{
-            //    facebookOptions.AppId = Configuration["Authentication:Facebook:AppId"];
-            //    facebookOptions.AppSecret = Configuration["Authentication:Facebook:AppSecret"];
-            //})
-
-
-            services.AddAuthentication(options =>
-                {
-                    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                    options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
-                    options.DefaultSignOutScheme = IdentityConstants.ApplicationScheme;
-                })
-                .AddCookie(options =>
-                {
-                    options.Cookie.IsEssential = true;
-                    //options.Cookie.SameSite = SameSiteMode.None;
-                })
-            //    .AddFacebook(options =>
-            //    {
-            //        options.AppId = Configuration["FacebookOptions:AppId"];
-            //        options.AppSecret = Configuration["FacebookOptions:AppSecret"];
-            //    })
-                .AddGoogle(options =>
-                {
-                    var googleAuth = Configuration.GetSection("Authentication:Google");
-
-                    options.CallbackPath = new PathString("/signin-google");
-                    options.ClientId = googleAuth["ClientId"];
-                    options.ClientSecret = googleAuth["ClientSecret"];
-                    options.SignInScheme = IdentityConstants.ExternalScheme;
-
-                    options.Events = new OAuthEvents
-                    {
-                        OnRemoteFailure = (RemoteFailureContext context) =>
-                        {
-                            //context.Failure.Message contains an error message that hopefully will help identify the problem
-
-                            context.Response.Redirect($"/error?errorMessage={context.Failure.Message}");
-                            context.HandleResponse();
-                            return null;
-                        }
-                    };
-                });
 
             services.AddControllers();
         }
